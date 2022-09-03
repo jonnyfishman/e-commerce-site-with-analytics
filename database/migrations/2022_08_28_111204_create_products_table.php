@@ -19,9 +19,11 @@ return new class extends Migration
             $table->id('id');
             $table->timestamps();
 
+            $table->string('brand', 16);
             $table->mediumText('name');
             $table->double('price', 5 , 2);
             $table->longText('description');
+            $table->double('colour_index', 3 , 2);
             $table->mediumText('colour');
             $table->mediumText('image')->nullable();
         });
@@ -36,7 +38,7 @@ return new class extends Migration
     {
         $product_files = Storage::disk('public')->files( '/product_files/' );
         echo PHP_EOL.'Deleteing '.count($product_files).' images...'.PHP_EOL;
-        Storage::delete($product_files);
+        Storage::disk('public')->delete($product_files);
 
         Schema::dropIfExists('products');
     }

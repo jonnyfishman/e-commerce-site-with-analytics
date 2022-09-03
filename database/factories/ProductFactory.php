@@ -5,7 +5,7 @@ namespace Database\Factories;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 use Illuminate\Support\Arr;
-// use Illuminate\Support\Str;
+use Illuminate\Support\Str;
 
 use App\Models\Product;
 
@@ -21,58 +21,29 @@ class ProductFactory extends Factory
      * @var string
      */
 
-    protected $brand = [
-      'Nike',
-      'Salomon',
-      'Cloud',
-      'Brooks',
-      'Hoka',
-      'Hi-Tec',
-      'adidas',
-      'Altra',
-      'Asics',
-      'Inov8',
-      'New Balance'
-    ];
-
-    protected $name = [
-      'Sky Plus',
-      'Trail',
-      'Extreme',
-      'Hardtail',
-      'Pegasus',
-      'Elite',
-      'Speedgoat',
-      'Vapor',
-      'Supersonic',
-      'Hierro',
-      'Peregrine',
-      'Adrenaline',
-      'Terra',
-      'Zoom',
-      'Ultra',
-      'Lone Peak'
-    ];
-
-    protected $suffix = [
-      ' 2.0',
-      ' 20',
-      ' Limited Edition',
-      ' GTS',
-      ' 8',
-      ' 12',
-      ' X',
-      '',
-      '',
-      '',
-      '',
-      '',
-      '',
-      '',
-      '',
-      '',
-      '',
-      ''
+    public $brand_and_names = [
+      'Nike'=>
+        ['Sky','Sky Plus','Adventurer','Speed','Pacer'],
+      'Salomon'=>
+        ['Trail 21','Trail 22','Elite','Classic'],
+      'Cloud'=>
+        ['Up','Pegasus','Space','Space Limited Edition'],
+      'Brooks'=>
+        ['Caldera','Vapor','Vapor GTS'],
+      'Hoka'=>
+        ['Extreme','Hierro','Extreme v2'],
+      'Hi-Tec'=>
+        ['Zoom'],
+      'adidas'=>
+        ['Adrenaline','Supersonic','Adrenaline X'],
+      'Altra'=>
+        ['Terra','Peregrine','Peregine H2','Terra H2'],
+      'Asics'=>
+        ['Ultra','Ultra X','Ultra GTS'],
+      'Inov8'=>
+        ['Lone Peak','Speedgoat'],
+      'New Balance'=>
+        ['Hardtail','Hardtail Limted']
     ];
 
     protected $text = [
@@ -119,18 +90,62 @@ class ProductFactory extends Factory
     imagecopy($final_img, $sole, 0, 0, 0, 0, 400, 400);
 
     echo 'Generating Image...'.$filename. '_400x400.png' .PHP_EOL;
-    imageflip($final_img, IMG_FLIP_HORIZONTAL);
+    if ( rand(0, 1) ) {
+      imageflip($final_img, IMG_FLIP_HORIZONTAL);
+    }
 
     imagePng($final_img, storage_path().'/app/public/product_files/'. $filename . '_400x400.png');
     imagedestroy($final_img);
 
-    return file_exists(storage_path().'/app/public/product_files/'. $filename . '_400x400.png');
+      if ( file_exists(storage_path().'/app/public/product_files/'. $filename . '_400x400.png') ) {
+        return $this->rgbToHsl($tr, $tg, $tb);
+      }
+      else {
+        return false;
+      }
     }
 
     protected $palette_m = ['#b6ddee','#11666d','#fcbe4d','#884187','#7ea0bb','#c63463','#876c59','#fbc8c4','#04599c','#cb3527','#000103','#C7F2A7','#44CF6C','#A9FDAC'];
     protected $palette_t = ['Space Cadet'=>'#262e57', 'Orange Web'=>'#f7a007', 'French Raspberry'=>'#c32b42', 'Platinum'=>'#e8e9eb', 'Celadon Green'=>'#36827f', 'Maximum Yellow'=>'#F6F930', 'Fawn'=>'#E6AA68', 'Metallic Seaweed'=>'#1F7A8C', 'Bright Yellow Crayola'=>'#FCAB10','Safety Orange'=>'#F17105', 'Eerie Black'=>'#1B1B1E','Gainsboro'=>'#D8DBE2','Minion Yellow'=>'#EAD94C','Tea Green'=>'#D7EBBA','Camel'=>'#BB9457','Dark Purple'=>'#291528','Artic Blue'=>'#F4FAFF'];
-    protected $palette_name = ['Space Cadet', 'Orange Web', 'French Raspberry', 'Platinum', 'Celadon Green', 'Maximum Yellow', 'Fawn', 'Metallic Seaweed','Bright Yellow Crayola','Safety Orange', 'Eerie Black','Gainsboro','Minion Yellow','Tea Green','Camel','Dark Purple','Artic Blue'];
     // createTrainer($palette_m[random_int(0,count($palette_m)-1)],$palette_t[random_int(0,count($palette_t)-1)]);
+
+    protected function rgbToHsl($r, $g, $b) {
+      $r /= 255;
+      $g /= 255;
+      $b /= 255;
+
+      $max = max($r, $g, $b);
+      $min = min($r, $g, $b);
+
+      $h = 0;
+      $l = ($max + $min) / 2;
+      $d = $max - $min;
+
+      if ($d == 0) {
+          $h = $s = 0; // achromatic
+      } else {
+          $s = $d / (1 - abs(2 * $l - 1));
+
+          switch ($max) {
+              case $r:
+                  $h = 60 * fmod((($g - $b) / $d), 6);
+                  if ($b > $g) {
+                      $h += 360;
+                  }
+                  break;
+
+              case $g:
+                  $h = 60 * (($b - $r) / $d + 2);
+                  break;
+
+              case $b:
+                  $h = 60 * (($r - $g) / $d + 4);
+                  break;
+          }
+      }
+
+      return round($l, 2);
+    }
 
     /**
      * Define the model's default state.
@@ -139,9 +154,14 @@ class ProductFactory extends Factory
      */
     public function definition()
     {
-        $brand = Arr::random($this->brand);
 
-        $name = $brand . ' ' . Arr::random($this->name)  .  Arr::random($this->suffix);
+        $brand = Arr::random( array_keys($this->brand_and_names) );
+
+        if ( count($this->brand_and_names[$brand]) == 0) {
+          $name = fake()->streetSuffix();
+        } else {
+          $name = array_splice( $this->brand_and_names[$brand], random_int(0, count($this->brand_and_names[$brand]) - 1 ), 1)[0];
+        }
 
         $sentences = Arr::shuffle($this->text);
         $number_of_sentences = count($this->text);
@@ -152,18 +172,22 @@ class ProductFactory extends Factory
 
         $description = str_replace( "BRAND", $brand, $description );
 
-        $colour = Arr::random($this->palette_name);
-        $image_name = bin2hex(random_bytes(2)) . '_' . str_replace(' ', '_', $name);
+        $colour = Arr::random( array_keys($this->palette_t) );
+        // $image_name = bin2hex(random_bytes(2)) . '_' . str_replace(' ', '_', $name);
+        $image_name = Str::random(4) . '_' . str_replace(' ', '_', $name);
 
-        if (!$this->createTrainer($colour, $image_name) ) {
+        $colour_index = $this->createTrainer($colour, $image_name);
+        if ( !$colour_index ) {
             $colour = 'Colours Unavailable';
             $image_name = null;
         }
 
         return [
             'name' => $name,
+            'brand' => $brand,
             'price' => random_int(87,156) . '.99',
             'description' => $description,
+            'colour_index' => $colour_index,
             'colour' => $colour,
             'image' => $image_name
         ];

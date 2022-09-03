@@ -15,7 +15,7 @@ class ProductTableSeeder extends Seeder
      */
    public function run()
    {
-      Product::factory(50)->make()->each(function($product) {
+      Product::factory(30)->make()->each(function($product) {
 
           return $product->save();
 
