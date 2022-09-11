@@ -9,6 +9,8 @@ class Product extends Model
 {
     use HasFactory;
 
+    public static $categorical = ['brand','colour'];
+
     public function stock() {
       return $this->hasMany(Stock::class);
     }
@@ -16,4 +18,5 @@ class Product extends Model
     public function information() {
       return $this->hasOne(ProductInformation::class);
     }
+
 }

@@ -31,7 +31,7 @@ class ProductInformationFactory extends Factory
     {
         return [
             'fit' => Arr::random($this->fit),
-            'rise' => random_int(6,11),
+            'rise' => random_int(6,11).'mm',
             'terrain' => Arr::random($this->terrain),
             'material' => $this->arrayToJson($this->material, 3),
             'tags' => $this->arrayToJson($this->tags, 4)

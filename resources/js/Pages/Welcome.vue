@@ -3,34 +3,29 @@
   <main>
     <aside>
       <h2>Filters</h2>
-      <p-filter :id="getRamdomInt()" label="Fit" :options="['Narrow', 'Wide']" />
-      <p-filter :id="getRamdomInt()" label="Price" :options="['&lt; £100', '&lt; £200', '&lt; £300']" />
-      <p-filter :id="getRamdomInt()" label="Drop" :options="['6mm', '8mm', '12mm']" />
+      <button v-if="this.filter.length > 0" class="btn" @click.prevent="filterProducts([])">
+        Clear {{this.filter.length}} Filters
+        <font-awesome-icon class="close" icon="fa-solid fa-xmark" />
+      </button>
+      <div v-for="category in categories" :key="category.name">
+
+        <p-filter :label="category.name" :options="category.values" :filter="this.filter.length" @triggered="filterProducts" />
+      </div>
+
     </aside>
     <article>
       <header>
         <h2>Mens Trail Running Shoes</h2>
-        <div class="sort-group">
-          <span>Brand
-              <font-awesome-icon @click.prevent="sortShoes('brand&desc')" icon="fa-solid fa-chevron-up" />
-              <font-awesome-icon @click.prevent="sortShoes('brand')" icon="fa-solid fa-chevron-down" />
-          </span>
-          <span>Name
-            <font-awesome-icon @click.prevent="sortShoes('name&desc')" icon="fa-solid fa-chevron-up" />
-            <font-awesome-icon @click.prevent="sortShoes('name')" icon="fa-solid fa-chevron-down" />
-          </span>
-          <span>Price
-            <font-awesome-icon @click.prevent="sortShoes('price')" icon="fa-solid fa-chevron-up" />
-            <font-awesome-icon @click.prevent="sortShoes('price&desc')" icon="fa-solid fa-chevron-down" />
-          </span>
-          <span>Colour
-            <font-awesome-icon @click.prevent="sortShoes('colour_index')" icon="fa-solid fa-chevron-up" />
-            <font-awesome-icon @click.prevent="sortShoes('colour_index&desc')" icon="fa-solid fa-chevron-down" />
-          </span>
+        
+        <div v-if="products[0]" class="sort-group" >
+
+          <p-sort v-for="sortable in sortables" :key="sortable.column" :sortable="sortable" @triggered="sortProducts">
+            {{ sortable.name }}
+          </p-sort>
         </div>
       </header>
-      <section v-for="shoe in shoes" :key="shoe.id">
-        <p-section :shoe="shoe" />
+      <section v-for="product in filtered" :key="product.id+product.name">
+        <p-section :product="product" :key="product.id" />
       </section>
     </article>
   </main>
@@ -44,48 +39,125 @@ import { Head, Link } from '@inertiajs/inertia-vue3';
 import NavBar from '@/Components/NavBar.vue'
 import pFilter from '@/Components/pFilter.vue'
 import pSection from '@/Components/pSection.vue'
+import pSort from '@/Components/pSort.vue'
+import { isEqual } from 'lodash';
 
 export default {
   data () {
     return {
-      shoes: [],
+      products_orig: [],
+      products: [],
+      sortables: [
+          {
+            name: 'Name',
+            column: "name"
+          },
+          {
+            name: 'Brand',
+            column: "brand"
+          },
+          {
+            name: 'Price',
+            column: "price"
+          },
+          {
+            name: 'Colour',
+            column: "colour"
+          },
 
+      ],
+      categories_orig: [],
+      categories: [],
+      filter: []
     }
   },
   components: {
     Head, Link,
-    NavBar, pFilter, pSection
+    NavBar, pFilter, pSection, pSort
   },
   methods: {
-    getRamdomInt () {
-      return Math.floor(Math.random() * (999 - 111 + 1) + 111)
-    },
-    sortShoes(searchTerm) {
-      axios
-      .get('/api/products?sortBy=' + searchTerm)
-      .then(response => {
-        if ( response.data.length == 1 ) {    // get rid of this by edting the resource controller
-          this.shoes = [ response.data ]
-        }
-        else {
-            this.shoes = response.data
-        }
+    sortProducts(name, desc) {
 
+      this.products.sort((a,b) => {
+
+  			let fa, fb
+        fa = ( typeof a[name] === 'string' ) ? a[name].toLowerCase() : a[name]
+        fb = ( typeof b[name] === 'string' ) ? b[name].toLowerCase() : b[name]
+
+  			if (fa < fb) {
+  				return desc ? -1 : 1
+  			}
+  			if (fa > fb) {
+  				return desc ? 1 : -1
+  			}
+  			return 0
+  		})
+
+    },
+    filterProducts(ids, del = false) {
+      if ( del == true) {
+
+        // this.filter = difference(this.filter, ids)
+
+
+        this.filter = this.filter.filter(id => {
+
+          return !isEqual(id, ids)
+        })
+
+
+        return
+      } else if ( ids.length === 0 ) {
+        this.filter = []
+
+        return
+      }
+
+      this.filter.push(ids)
+
+      /*
+      this.filter =  this.filter.length === 0 ?
+                            this.filter = ids :
+                            intersection(ids.flatMap(id => id), this.filter.flatMap(id => id))
+                            */
+      /*
+      this.categories.filter(p => {
+        return this.filter.flatMap(id => id).some(id => id === p['id'])
       })
-    }
+      */
+    },
+
+  },
+  computed: {
+    filtered: function() {  // Not sorting after multiple chosen?
+
+      if (this.filter.length === 0) return this.products
+
+      return this.products.filter(p => {
+        return this.filter.flatMap(id => id).some(id => id === p['id'])
+      })
+    },
+
   },
   mounted() {
     axios
     .get('/api/products')
     .then(response => {
-      if ( response.data.length == 1 ) {
-        this.shoes = [ response.data ]
-      }
-      else {
-          this.shoes = response.data
-      }
+
+          this.products_orig = response.data.data
+          this.products = response.data.data
 
     })
+
+    axios
+    .get('/api/categories')
+    .then(response => {
+
+          this.categories_orig = response.data.data
+          this.categories = response.data.data
+
+    })
+
   }
 }
 </script>
@@ -94,15 +166,30 @@ export default {
   .sort-group {
     margin-bottom:0.6em;
   }
-  .sort-group span:hover {
-    color:#666;
-  }
-  .sort-group span {
-    padding-right:0.2em;
-    border-right:1px solid #ccc;
-    margin-right:0.4em;
-  }
   .sort-group span:last-child {
     border-right:none;
+  }
+  .btn {
+    border:none;
+    border-bottom:1px solid #999;
+    padding:0.4em;
+    width:100%;
+    text-align:left;
+    background:none;
+    font-size:100%;
+    font-family:inherit;
+
+    position:relative;
+    font-size:100%;
+    display: inline-flex;
+    align-items: center;
+  }
+  .close {
+
+    position:absolute;
+    right:0.6em;
+  }
+  .btn:hover {
+    background:#E2EFDE;
   }
 </style>

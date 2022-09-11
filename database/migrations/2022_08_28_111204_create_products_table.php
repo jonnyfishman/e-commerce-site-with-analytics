@@ -15,16 +15,17 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('products', function (Blueprint $table) {
+        Schema::create('products', function (Blueprint $table) {    // What happens to children when parent is deleted?
             $table->id('id');
             $table->timestamps();
 
             $table->string('brand', 16);
             $table->mediumText('name');
             $table->double('price', 5 , 2);
+            //$table->double('colour_index', 3 , 2);
+            $table->json('colour');
+
             $table->longText('description');
-            $table->double('colour_index', 3 , 2);
-            $table->mediumText('colour');
             $table->mediumText('image')->nullable();
         });
     }

@@ -21,7 +21,7 @@ return new class extends Migration
             $table->foreign('product_id')->references('id')->on('products');
 
             $table->string('fit', 10);
-            $table->smallInteger('rise');
+            $table->string('rise', 5);
             $table->string('terrain', 10);
             $table->json('material');
             $table->json('tags');

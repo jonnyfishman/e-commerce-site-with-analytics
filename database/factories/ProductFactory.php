@@ -1,5 +1,4 @@
 <?php
-
 namespace Database\Factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -8,6 +7,8 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 
 use App\Models\Product;
+
+use ColorCompare\Color;
 
 /**
  * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Model>
@@ -98,7 +99,7 @@ class ProductFactory extends Factory
     imagedestroy($final_img);
 
       if ( file_exists(storage_path().'/app/public/product_files/'. $filename . '_400x400.png') ) {
-        return $this->rgbToHsl($tr, $tg, $tb);
+        return round( ( new color(['r'=>$tr, 'g'=>$tg, 'b'=>$tb]) )->getHsl()['l'], 2);
       }
       else {
         return false;
@@ -108,43 +109,23 @@ class ProductFactory extends Factory
     protected $palette_m = ['#b6ddee','#11666d','#fcbe4d','#884187','#7ea0bb','#c63463','#876c59','#fbc8c4','#04599c','#cb3527','#000103','#C7F2A7','#44CF6C','#A9FDAC'];
     protected $palette_t = ['Space Cadet'=>'#262e57', 'Orange Web'=>'#f7a007', 'French Raspberry'=>'#c32b42', 'Platinum'=>'#e8e9eb', 'Celadon Green'=>'#36827f', 'Maximum Yellow'=>'#F6F930', 'Fawn'=>'#E6AA68', 'Metallic Seaweed'=>'#1F7A8C', 'Bright Yellow Crayola'=>'#FCAB10','Safety Orange'=>'#F17105', 'Eerie Black'=>'#1B1B1E','Gainsboro'=>'#D8DBE2','Minion Yellow'=>'#EAD94C','Tea Green'=>'#D7EBBA','Camel'=>'#BB9457','Dark Purple'=>'#291528','Artic Blue'=>'#F4FAFF'];
     // createTrainer($palette_m[random_int(0,count($palette_m)-1)],$palette_t[random_int(0,count($palette_t)-1)]);
+    protected $sorting_palette = ['#000000','#006699','#FFFF33','#CCCCFF','#339966','#cb3527','#ff6633','#f0f0f0'];
 
-    protected function rgbToHsl($r, $g, $b) {
-      $r /= 255;
-      $g /= 255;
-      $b /= 255;
+    protected function closestMatch($colour) {
+      $original_colour = new Color($colour);
+      $closest = null;
+      $closest_difference = 10000;
 
-      $max = max($r, $g, $b);
-      $min = min($r, $g, $b);
-
-      $h = 0;
-      $l = ($max + $min) / 2;
-      $d = $max - $min;
-
-      if ($d == 0) {
-          $h = $s = 0; // achromatic
-      } else {
-          $s = $d / (1 - abs(2 * $l - 1));
-
-          switch ($max) {
-              case $r:
-                  $h = 60 * fmod((($g - $b) / $d), 6);
-                  if ($b > $g) {
-                      $h += 360;
-                  }
-                  break;
-
-              case $g:
-                  $h = 60 * (($b - $r) / $d + 2);
-                  break;
-
-              case $b:
-                  $h = 60 * (($r - $g) / $d + 4);
-                  break;
+      foreach( $this->sorting_palette as $colour_index) {
+          $difference = $original_colour->getDifference(new Color($colour_index));
+          if ($closest_difference > $difference ) {
+            $closest_difference = $difference;
+            $closest = $colour_index;
           }
-      }
 
-      return round($l, 2);
+      }
+      return $closest;
+
     }
 
     /**
@@ -173,6 +154,7 @@ class ProductFactory extends Factory
         $description = str_replace( "BRAND", $brand, $description );
 
         $colour = Arr::random( array_keys($this->palette_t) );
+        $hex = $this->palette_t[$colour];
         // $image_name = bin2hex(random_bytes(2)) . '_' . str_replace(' ', '_', $name);
         $image_name = Str::random(4) . '_' . str_replace(' ', '_', $name);
 
@@ -182,13 +164,15 @@ class ProductFactory extends Factory
             $image_name = null;
         }
 
+
+
+
         return [
             'name' => $name,
             'brand' => $brand,
             'price' => random_int(87,156) . '.99',
             'description' => $description,
-            'colour_index' => $colour_index,
-            'colour' => $colour,
+            'colour' => json_encode(['index'=>$colour_index, 'name'=>$colour, 'hex'=>$this->closestMatch($hex)]),
             'image' => $image_name
         ];
     }

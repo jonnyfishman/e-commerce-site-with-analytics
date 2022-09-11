@@ -3,10 +3,12 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-// use App\Models\Product;
+use App\Models\Product;
 use App\Models\ProductInformation;
 
 use \App\Http\Controllers\Api\ProductController;
+use \App\Http\Controllers\Api\ProductInformationController;
+use \App\Http\Controllers\Api\CategoryController;
 
 /*
 |--------------------------------------------------------------------------
@@ -27,8 +29,31 @@ Route::get('products', function (Request $request) {
     return Product::all();
 });
 */
-Route::apiResource('products', ProductController::class)->only(['index', 'show']);
+Route::apiResource('products', ProductController::class)->only(['index', 'show']);  // SORT SHOULDN'T BE SERVER SIDE?
 
+
+Route::apiResource('information', ProductInformationController::class)->only(['index', 'show']);
+
+Route::get('category/{category}', function ($category, Request $request) {
+    // return ProductInformation::with(['product'])->where('fit', 'like', $category)->get();
+
+    return Product::join('product_information', 'products.id', '=', 'product_id')
+          ->where($category, 'like', '%'.$request->query()['filter'].'%')->get();
+
+});
+
+Route::apiResource('categories', CategoryController::class)->only(['index']);
+
+
+/*
+Route::get('categories', function (Request $request) {
+    // return ProductInformation::with(['product'])->where('fit', 'like', $category)->get();
+
+    return ProductInformation::select('fit', DB::raw('count(fit) AS total'))->groupBy('fit')->orderBy('fit')->get();
+    // SELECT fit, count(fit) AS Total FROM product_information GROUP BY fit;
+    select `colour`, `brand`, `product_information`.`fit`, `product_information`.`rise`, `product_information`.`terrain` from `products` inner join `product_information` on `products`.`id` = `product_id`
+});
+*/
 /*
 Route::get('bookables/{bookable}/availability', 'Api\BookableAvailabilityController')
     ->name('bookables.availability.show');
