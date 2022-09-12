@@ -5,7 +5,7 @@
 /storage/*.key
 !/vendor
 /vendor/*
-/vendor/tightenco
+!/vendor/tightenco
 # .env -- while developing
 .env.backup
 .phpunit.result.cache
