@@ -3,7 +3,9 @@
 /public/hot
 /public/storage
 /storage/*.key
-/vendor
+!/vendor
+/vendor/*
+/vendor/tightenco
 # .env -- while developing
 .env.backup
 .phpunit.result.cache
