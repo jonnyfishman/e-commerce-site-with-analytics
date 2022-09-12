@@ -2,39 +2,24 @@
   <fieldset>
     <input class="toggle" type="checkbox" :id="id"/>
     <label :for="id">{{ label }}</label><!-- add fa icon-->
-
-      <template v-if="getType(options[0].sub_category) === 'int'">
-
-
-          <div>Min: £{{ value[0] }} Max: £{{ value[1]}}</div>
-          
-           <vue-slider v-model="value" :min="Math.floor(options[0].sub_category / 100) * 100" :max="Math.ceil(options[options.length-1].sub_category / 100) * 100" drag-end="alert('end')" :tooltip-placement="['bottom', 'bottom']" :adsorb="true" :interval="10" @drag-end="getTriggered">
-
-           </vue-slider>
-
-      </template>
-      <template v-else>
-        <ul>
+        <ul v-if="!isNumber" class="sub_category">
           <li :class="{active: active[index] }" v-for="(option, index) in options" :key="option.sub_category" @click="triggered(option.values, index)">
-            <template v-if="getType(option.sub_category) === 'hex'">
-              <span class="colour_dot" :style="{ 'background-color': `${option.sub_category}`}"></span>({{ option.values.length }})
-            </template>
-            <template v-else>
-            {{ option.sub_category }} ({{ option.values.length }})
-            </template>
+
+            <template v-if="isHex"><span class="colour_dot" :style="{ 'background-color': `${option.sub_category}`}"></span>({{ option.values.length }})</template>
+            <template v-else>{{ option.sub_category }} ({{ option.values.length }})</template>
             <font-awesome-icon v-if="!active[index]" class="circle" icon="fa-regular fa-circle" />
             <font-awesome-icon v-if="active[index]" class="check" icon="fa-regular fa-circle-check" />
 
           </li>
         </ul>
-      </template>
-
+        <div v-else class="sub_category">
+          <p-range :options="options" :filter="filter" @triggered="(ids, state) => this.$emit('triggered', ids, state)"/>
+        </div>
   </fieldset>
 </template>
 
 <script>
-import VueSlider from 'vue-slider-component'
-import 'vue-slider-component/theme/default.css'
+import pRange from '@/Components/pRange.vue'
 
 export default {
   name: 'pFilter',
@@ -56,11 +41,11 @@ export default {
     return {
         id: null,
         active: [],
-        value: [Math.floor(this.options[0].sub_category / 100) * 100,Math.ceil(this.options[this.options.length-1].sub_category / 100) * 100]
+        first: this.options[0].sub_category
     }
   },
   components: {
-    VueSlider
+    pRange
   },
   methods: {
     triggered(ids, index) {
@@ -78,26 +63,18 @@ export default {
      }
 
    },
-   getType(name) {
-     if ( Number.isInteger(name) ) {
-       return 'int'
-     }
-     else if ( name.includes('#') > -1 && name.length==7 ) {
-       return 'hex'
-     }
-     return 'str'
+  },
+  computed: {
+   isHex: function() {
+
+     return ( (''+this.first).includes('#') && this.first.length==7 ) ? true : false
    },
-   getTriggered() {
-     let ids = []
-     this.options.map(id => {
-       if ( id.sub_category >= this.value[0] && id.sub_category < this.value[1] ) ids.push(id.values)
-     })
-     this.$emit('triggered', ids)
+   isNumber: function() {
+     return Number.isInteger(this.first) ? true : false
    }
   },
   watch: {
     filter: function() {
-      !isInteger(options.sub_category[0])
       if ( this.filter == 0 ) this.active = []
 
     }
@@ -121,13 +98,13 @@ export default {
   input[type=checkbox].toggle{
     display:none;
   }
-  ul {
+  .sub_category {
     list-style:none;
     padding:0;
     display:none;
     margin:0;
   }
-  input[type=checkbox]:checked ~ ul {
+  input[type=checkbox]:checked ~ .sub_category {
     display:block;
   }
 
@@ -139,7 +116,7 @@ export default {
     height:100%;
     display:block;
   }
-  .toggle+label, li {
+  .toggle+label, li, >>> p {
     padding:0.4em;
     position:relative;
     flex:1 1 auto;
@@ -149,7 +126,7 @@ export default {
     align-items: center;
     width:100%;
   }
-  li {
+  li, >>> p {
     font-size:80%;
   }
   li:hover {

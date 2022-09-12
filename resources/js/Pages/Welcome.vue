@@ -16,7 +16,7 @@
     <article>
       <header>
         <h2>Mens Trail Running Shoes</h2>
-        
+
         <div v-if="products[0]" class="sort-group" >
 
           <p-sort v-for="sortable in sortables" :key="sortable.column" :sortable="sortable" @triggered="sortProducts">
@@ -47,7 +47,7 @@ export default {
     return {
       products_orig: [],
       products: [],
-      sortables: [
+      sortables: [ // Get this from axios
           {
             name: 'Name',
             column: "name"
@@ -95,6 +95,7 @@ export default {
 
     },
     filterProducts(ids, del = false) {
+
       if ( del == true) {
 
         // this.filter = difference(this.filter, ids)
