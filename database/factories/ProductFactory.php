@@ -91,11 +91,16 @@ class ProductFactory extends Factory
     imagecopy($final_img, $sole, 0, 0, 0, 0, 400, 400);
 
     echo 'Generating Image...'.$filename. '_400x400.png' .PHP_EOL;
+    echo 'Generating Image...'.$filename. '_200x200.jpg' .PHP_EOL;
     if ( rand(0, 1) ) {
       imageflip($final_img, IMG_FLIP_HORIZONTAL);
     }
 
     imagePng($final_img, storage_path().'/app/public/product_files/'. $filename . '_400x400.png');
+    $thumbnail = imagecreatetruecolor(200,200);
+    imagecopyresampled($thumbnail, $final_img, 0, 0, 0, 0, 200, 200, 400, 400);
+    imagejpeg($thumbnail, storage_path().'/app/public/product_files/'. $filename . '_200x200.jpg',90);
+
     imagedestroy($final_img);
 
       if ( file_exists(storage_path().'/app/public/product_files/'. $filename . '_400x400.png') ) {

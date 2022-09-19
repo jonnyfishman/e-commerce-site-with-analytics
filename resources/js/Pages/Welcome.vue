@@ -75,6 +75,7 @@ export default {
   },
   methods: {
     loadProducts() {
+      this.products = []
       let query = ''
 
       if ( this.filter.length > 0 ) {
@@ -122,7 +123,7 @@ export default {
         this.filter = ids
         this.loadCategories(query)
         this.loadProducts()
-        this.filter = []
+        this.filter = ['']
         return
       }
 
