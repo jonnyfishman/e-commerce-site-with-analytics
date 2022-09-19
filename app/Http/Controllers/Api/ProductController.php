@@ -27,7 +27,21 @@ class ProductController extends Controller
       return ProductResource::collection( Product::all() );
     }
   */
-    return ProductResource::collection( Product::select('name','id','brand','colour','price','image')->get() );
+
+  // need validation
+
+  $ids = explode(',',$request->query('ids') );
+  $query = [];
+
+
+    $products = Product::select('name','id','brand','colour','price','image');
+
+    if ( $ids[0] ) {
+      $products->whereIn('id',$ids);
+    }
+
+
+    return ProductResource::collection( $products->get() );
   }
 
   public function show($id) {

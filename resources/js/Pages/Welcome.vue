@@ -24,7 +24,7 @@
           </p-sort>
         </div>
       </header>
-      <section v-for="product in filtered" :key="product.id+product.name">
+      <section v-for="product in products" :key="product.id+product.name">
         <p-section :product="product" :key="product.id" />
       </section>
     </article>
@@ -74,6 +74,30 @@ export default {
     NavBar, pFilter, pSection, pSort
   },
   methods: {
+    loadProducts() {
+      let query = ''
+
+      if ( this.filter.length > 0 ) {
+          query = '?ids=' + this.filter.join(',')
+      }
+
+      axios
+      .get('/api/products'+query) // should post in ids and get response default should be recommended products
+      .then(response => {
+
+            this.products = response.data.data
+
+      })
+    },
+    loadCategories(query = '') {  console.log(query)
+      axios
+      .get('/api/categories'+query)
+      .then(response => {
+
+            this.categories = response.data.data
+
+      })
+    },
     sortProducts(name, desc) {
 
       this.products.sort((a,b) => {
@@ -93,15 +117,13 @@ export default {
 
     },
     filterProducts(ids, del = false, query = false) {
-console.log('query',query)
-      if ( query ) {
-        axios
-        .get('/api/categories' + query)
-        .then(response => {
 
-              this.categories = response.data.data
-
-        })
+      if ( query ) {    // query needs to be additive for multiple range components
+        this.filter = ids
+        this.loadCategories(query)
+        this.loadProducts()
+        this.filter = []
+        return
       }
 
       if ( del == true) {
@@ -114,16 +136,19 @@ console.log('query',query)
           return !isEqual(id, ids)
         })
 
+        this.loadProducts()
 
         return
       } else if ( ids.length === 0 ) {
         this.filter = []
-
+        console.log('clear')
+        this.loadCategories()
+this.loadProducts()
         return
       }
 
       this.filter.push(ids)   // this should be an axios call to get new ids
-
+      this.loadProducts()
       /*
       this.filter =  this.filter.length === 0 ?
                             this.filter = ids :
@@ -138,32 +163,15 @@ console.log('query',query)
 
   },
   computed: {
-    filtered: function() {
 
-      if (this.filter.length === 0) return this.products
-
-      return this.products.filter(p => {
-        return this.filter.flatMap(id => id).some(id => id === p['id'])
-      })
-    },
 
   },
   mounted() {
-    axios
-    .get('/api/products') // should post in ids and get response default should be recommended products
-    .then(response => {
 
-          this.products = response.data.data
 
-    })
+    this.loadProducts();
 
-    axios
-    .get('/api/categories')
-    .then(response => {
-
-          this.categories = response.data.data
-
-    })
+    this.loadCategories();
 
   }
 }

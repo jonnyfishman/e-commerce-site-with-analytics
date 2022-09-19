@@ -27,6 +27,7 @@ export default {
     return {
         interval: 10,
         min: this.options[0].sub_category,
+        max: this.options[this.options.length-1].sub_category + 10,
         range: [],
         ids: []
     }
@@ -43,9 +44,9 @@ export default {
      this.options.forEach(id => {
        if ( id.sub_category >= this.range[0] && id.sub_category < this.range[1] ) this.ids.push(id.values)
      })
-     this.$emit('triggered', this.ids.flatMap(id=>id), false, '?filter=price,'+this.range[0]+','+this.range[1])
+     this.$emit('triggered', this.ids.flatMap(id=>id), false, '?range=price,'+this.range[0]+','+this.range[1])
    },
-   reset() {console.log('reset')
+   reset() {
      this.range = [this.min,this.max]
    }
   },
@@ -56,9 +57,11 @@ export default {
     }
   },
   computed: {
+/*
     max: function() {
       return this.options[this.options.length-1].sub_category + this.interval
     },
+*/
     getRange: function() {
         return [this.min, this.max]
     }

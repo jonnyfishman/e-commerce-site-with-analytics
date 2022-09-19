@@ -24,29 +24,29 @@ Collection::macro('ksort', function(){
 
 class CategoryController extends Controller
 {
-  public function index(Request $request) { // should have one route to get categories then another to get category ids 
+  public function index(Request $request) { // should have one route to get categories then another to get category ids
 
     $categories = ['colour','brand','fit','rise','terrain','price']; // push this to factory
     $query = [];
 
     $validated = $request->validate([
-      'filter' => [new Range($categories)]
+      'range' => [new Range($categories)]
     ]);
 
-    $filters = explode(',',$request->query('filter') );
+    $range = explode(',',$request->query('range') );
 
-    if ( count( $filters ) > 1 ) {
-      for ($i=0; $i < count($filters); $i+=3) {
-        [$name,$min,$max] = [$filters[$i],$filters[$i+1],$filters[$i+2]];
+    if ( count( $range ) > 1 ) {
+      for ($i=0; $i < count($range); $i+=3) {
+        [$name,$min,$max] = [$range[$i],$range[$i+1],$range[$i+2]];
 
           array_push($query, [$name, '>', $min], [$name, '<=', $max]);
 
       }
     }
-
+    
 
 // call to productcontroller?
-    $products = ProductInformationResource::collection( Product::select('products.id','price','colour','brand','product_information.fit','product_information.rise','product_information.terrain')->where($query)->join('product_information', 'products.id', '=', 'product_id')->get() )->sortBy('price');
+    $products = ProductInformationResource::collection( Product::select('products.id','price','colour','brand','product_information.fit','product_information.rise','product_information.terrain')->where($query)->join('product_information', 'products.id', '=', 'product_id')->get() );
 
 
     $c = collect($categories)->map(function ($name) use($products) {
@@ -56,6 +56,7 @@ class CategoryController extends Controller
               'values' => $products->mapToGroups(function ($item, $key) use($name) {
                                       //print_r($item).PHP_EOL;
                                       // if ( is_numeric($item[$name]) ) return [ $item[$name] => $item['id'] ];
+
                                       return [ collect($item)[$name] => $item['id'] ];
                                     })
                                     ->ksort()
