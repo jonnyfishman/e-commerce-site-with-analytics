@@ -45,7 +45,6 @@ import { isEqual } from 'lodash';
 export default {
   data () {
     return {
-      products_orig: [],
       products: [],
       sortables: [ // Get this from axios
           {
@@ -66,7 +65,6 @@ export default {
           },
 
       ],
-      categories_orig: [],
       categories: [],
       filter: []
     }
@@ -94,7 +92,17 @@ export default {
   		})
 
     },
-    filterProducts(ids, del = false) {
+    filterProducts(ids, del = false, query = false) {
+console.log('query',query)
+      if ( query ) {
+        axios
+        .get('/api/categories' + query)
+        .then(response => {
+
+              this.categories = response.data.data
+
+        })
+      }
 
       if ( del == true) {
 
@@ -114,7 +122,7 @@ export default {
         return
       }
 
-      this.filter.push(ids)
+      this.filter.push(ids)   // this should be an axios call to get new ids
 
       /*
       this.filter =  this.filter.length === 0 ?
@@ -130,7 +138,7 @@ export default {
 
   },
   computed: {
-    filtered: function() {  // Not sorting after multiple chosen?
+    filtered: function() {
 
       if (this.filter.length === 0) return this.products
 
@@ -142,10 +150,9 @@ export default {
   },
   mounted() {
     axios
-    .get('/api/products')
+    .get('/api/products') // should post in ids and get response default should be recommended products
     .then(response => {
 
-          this.products_orig = response.data.data
           this.products = response.data.data
 
     })
@@ -154,7 +161,6 @@ export default {
     .get('/api/categories')
     .then(response => {
 
-          this.categories_orig = response.data.data
           this.categories = response.data.data
 
     })

@@ -13,7 +13,7 @@
           </li>
         </ul>
         <div v-else class="sub_category">
-          <p-range :options="options" :filter="filter" @triggered="(ids, state) => this.$emit('triggered', ids, state)"/>
+          <p-range :options="options" :filter="filter" @triggered="(ids, state, query) => this.$emit('triggered', ids, state, query)"/>
         </div>
   </fieldset>
 </template>

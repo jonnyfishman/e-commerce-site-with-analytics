@@ -10,6 +10,8 @@ use App\Http\Resources\ProductInformationResource;
 
 use Illuminate\Support\Collection;
 
+use App\Rules\Range;
+
 Collection::macro('ksort', function(){
    //macros callbacks are bound to collection so we can safely access
    // protected Collection::items
@@ -22,14 +24,32 @@ Collection::macro('ksort', function(){
 
 class CategoryController extends Controller
 {
-  public function index(Request $request) {
+  public function index(Request $request) { // should have one route to get categories then another to get category ids 
 
-    $categories = collect(['colour','brand','fit','rise','terrain','price']);
+    $categories = ['colour','brand','fit','rise','terrain','price']; // push this to factory
+    $query = [];
+
+    $validated = $request->validate([
+      'filter' => [new Range($categories)]
+    ]);
+
+    $filters = explode(',',$request->query('filter') );
+
+    if ( count( $filters ) > 1 ) {
+      for ($i=0; $i < count($filters); $i+=3) {
+        [$name,$min,$max] = [$filters[$i],$filters[$i+1],$filters[$i+2]];
+
+          array_push($query, [$name, '>', $min], [$name, '<=', $max]);
+
+      }
+    }
+
+
 // call to productcontroller?
-    $products = ProductInformationResource::collection( Product::select('products.id','price','colour','brand','product_information.fit','product_information.rise','product_information.terrain')->join('product_information', 'products.id', '=', 'product_id')->get() );
+    $products = ProductInformationResource::collection( Product::select('products.id','price','colour','brand','product_information.fit','product_information.rise','product_information.terrain')->where($query)->join('product_information', 'products.id', '=', 'product_id')->get() )->sortBy('price');
 
 
-    $c = $categories->map(function ($name) use($products) {
+    $c = collect($categories)->map(function ($name) use($products) {
 
       return [
               'name'=> $name,

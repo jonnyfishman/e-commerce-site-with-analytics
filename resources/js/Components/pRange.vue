@@ -43,7 +43,7 @@ export default {
      this.options.forEach(id => {
        if ( id.sub_category >= this.range[0] && id.sub_category < this.range[1] ) this.ids.push(id.values)
      })
-     this.$emit('triggered', this.ids.flatMap(id=>id), false)
+     this.$emit('triggered', this.ids.flatMap(id=>id), false, '?filter=price,'+this.range[0]+','+this.range[1])
    },
    reset() {console.log('reset')
      this.range = [this.min,this.max]
