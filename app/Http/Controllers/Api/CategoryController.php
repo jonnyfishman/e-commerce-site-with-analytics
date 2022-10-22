@@ -9,7 +9,6 @@ use App\Models\Product;
 use App\Http\Resources\ProductInformationResource;
 
 use Illuminate\Support\Collection;
-
 use App\Rules\Range;
 
 Collection::macro('ksort', function(){
@@ -30,23 +29,23 @@ class CategoryController extends Controller
     $query = [];
 
     $validated = $request->validate([
-      'range' => [new Range($categories)]
+      'range' => [new Range($categories)],
     ]);
 
-    $range = explode(',',$request->query('range') );
+    if ( $request->query('range') ) {
+      $range = explode(',',$request->query('range') );
 
-    if ( count( $range ) > 1 ) {
-      for ($i=0; $i < count($range); $i+=3) {
-        [$name,$min,$max] = [$range[$i],$range[$i+1],$range[$i+2]];
+      if ( count( $range ) > 1 ) {
+        for ($i=0; $i < count($range); $i+=3) {
+          [$name,$min,$max] = [$range[$i],$range[$i+1],$range[$i+2]];
 
-          array_push($query, [$name, '>', $min], [$name, '<=', $max]);
+            array_push($query, [$name, '>', $min], [$name, '<=', $max]);
 
+        }
       }
     }
-    
 
-// call to productcontroller?
-    $products = ProductInformationResource::collection( Product::select('products.id','price','colour','brand','product_information.fit','product_information.rise','product_information.terrain')->where($query)->join('product_information', 'products.id', '=', 'product_id')->get() );
+    $products = ProductInformationResource::collection( Product::select('products.id','price','colour','brand','product_information.fit','product_information.rise','product_information.terrain')->join('product_information', 'products.id', '=', 'product_id')->where($query)->get() );
 
 
     $c = collect($categories)->map(function ($name) use($products) {
@@ -60,12 +59,14 @@ class CategoryController extends Controller
                                       return [ collect($item)[$name] => $item['id'] ];
                                     })
                                     ->ksort()
+                                    /*
                                     ->map(function ($item, $key) {
 
                                         return ['sub_category'=>$key, 'values'=>$item];
                                     })
                                     ->values()
                                     ->all()
+                                    */
 
             ];
     });

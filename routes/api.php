@@ -8,6 +8,7 @@ use App\Models\ProductInformation;
 
 use \App\Http\Controllers\Api\ProductController;
 use \App\Http\Controllers\Api\ProductInformationController;
+use \App\Http\Controllers\Api\ProductIdController;
 use \App\Http\Controllers\Api\CategoryController;
 
 /*
@@ -43,6 +44,8 @@ Route::get('category/{category}', function ($category, Request $request) {
 });
 
 Route::apiResource('categories', CategoryController::class)->only(['index']);
+
+Route::apiResource('categories/id', ProductIdController::class)->only(['index']);
 
 
 /*

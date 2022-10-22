@@ -3,17 +3,17 @@
     <input class="toggle" type="checkbox" :id="id"/>
     <label :for="id">{{ label }}</label><!-- add fa icon-->
         <ul v-if="!isNumber" class="sub_category">
-          <li :class="{active: active[index] }" v-for="(option, index) in options" :key="option.sub_category" @click="triggered(option.values, index)">
 
-            <template v-if="isHex"><span class="colour_dot" :style="{ 'background-color': `${option.sub_category}`}"></span>({{ option.values.length }})</template>
-            <template v-else>{{ option.sub_category }} ({{ option.values.length }})</template>
-            <font-awesome-icon v-if="!active[index]" class="circle" icon="fa-regular fa-circle" />
-            <font-awesome-icon v-if="active[index]" class="check" icon="fa-regular fa-circle-check" />
+          <li :class="{active: active[value] }" v-for="(value, index) in Object.keys(values)" :key="value" @click="triggered(label, value)">
+            <template v-if="isHex"><span class="colour_dot" :style="{ 'background-color': `${value}`}"></span>({{ Object.values(values)[index].length }})</template>
+            <template v-else>{{ value }} ({{ Object.values(values)[index].length }})</template>
+            <font-awesome-icon v-if="!active[value]" class="circle" icon="fa-regular fa-circle" />
+            <font-awesome-icon v-if="active[value]" class="check" icon="fa-regular fa-circle-check" />
 
           </li>
         </ul>
         <div v-else class="sub_category">
-          <p-range :options="options" :filter="filter" @triggered="(ids, state, query) => this.$emit('triggered', ids, state, query)"/>
+          <p-range :name="label" :values="Object.keys(values)"/>
         </div>
   </fieldset>
 </template>
@@ -28,38 +28,39 @@ export default {
       type: String,
       required: true
     },
-    options: {
+    values: {
       type: Object,
       required: true
-    },
-    filter: {
-      type: Number
-    },
+    }
 
   },
   data() {
     return {
         id: null,
-        active: [],
-        first: this.options[0].sub_category
+        active: {},
+        first: Object.keys(this.values)[0],
+        ids:[]
     }
   },
   components: {
     pRange
   },
   methods: {
-    triggered(ids, index) {
+    triggered(name, value) {
+      if ( !this.active[value] ) {
 
+        this.active[value] = true
 
-      if ( !this.active[index] ) {
-
-        this.active[index] = true
-
-        this.$emit('triggered', ids) //:
+        //this.$emit('triggered', this.ids) //:
+        this.$store.commit('addFilter', {'name':name, 'value':value})
+        this.$store.dispatch('updateProductIds', this.$store.state.filters)
+        // this.$emit('triggered', ids, false, '?range=price,'+this.range[0]+','+this.range[1])
      }
      else {
-       this.active[index] = false
-       this.$emit('triggered', ids, true)
+       this.active[value] = false
+       //this.$emit('triggered', this.ids, true) // delete ids
+       this.$store.commit('removeFilter', {'name':name, 'value':value})
+       this.$store.dispatch('updateProductIds', this.$store.state.filters)
      }
 
    },
@@ -70,12 +71,12 @@ export default {
      return ( (''+this.first).includes('#') && this.first.length==7 ) ? true : false
    },
    isNumber: function() {
-     return Number.isInteger(this.first) ? true : false
+     return !isNaN(this.first)
    }
   },
   watch: {
-    filter: function() {
-      if ( this.filter == 0 ) this.active = []
+    '$store.getters.numberOfFilters': function() {
+      if ( this.$store.getters.numberOfFilters === 0 ) this.active = []
 
     }
   },
