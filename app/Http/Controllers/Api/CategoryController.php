@@ -28,22 +28,33 @@ class CategoryController extends Controller
     $categories = ['colour','brand','fit','rise','terrain','price']; // push this to factory
     $query = [];
 
-    $validated = $request->validate([
-      'range' => [new Range($categories)],
-    ]);
+    //need validation
 
-    if ( $request->query('range') ) {
-      $range = explode(',',$request->query('range') );
+    foreach ($request->all() as $category => $value) {    // HELPER FUNCTION?
+        if ( !in_array($category, $categories) ) {
 
-      if ( count( $range ) > 1 ) {
-        for ($i=0; $i < count($range); $i+=3) {
-          [$name,$min,$max] = [$range[$i],$range[$i+1],$range[$i+2]];
+            //abort( response('Unauthorized', 401) );
+            abort( 401 );
+        } else {
+          $values = explode(',',$value );
+            if ( in_array('range',$values) ) {
 
-            array_push($query, [$name, '>', $min], [$name, '<=', $max]);
+                [$min,$max] = [$values[1],$values[2]];
+                array_push($query, [$category, '>', $min], [$category, '<=', $max]);
+
+
+            } else {
+              foreach ($values as $value) {
+                array_push($query, [$category, 'like', '%'.$value.'%']);
+
+              }
+            }
+
 
         }
-      }
+
     }
+
 
     $products = ProductInformationResource::collection( Product::select('products.id','price','colour','brand','product_information.fit','product_information.rise','product_information.terrain')->join('product_information', 'products.id', '=', 'product_id')->where($query)->get() );
 

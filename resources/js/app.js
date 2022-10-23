@@ -8,20 +8,23 @@ import { InertiaProgress } from '@inertiajs/progress';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { ZiggyVue } from '../../vendor/tightenco/ziggy/dist/vue.m.js';
 import FontAwesome from '@/Plugins/FontAwesome'
+import { intersection } from 'lodash';
 
 const appName = window.document.getElementsByTagName('title')[0]?.innerText || 'Laravel';
 
 const store = createStore({
   state () {
     return {
-      filters: [],
+      filters: {},
       categories: [],
       productIds: []
     }
   },
   getters: {
     numberOfFilters (state) {
-      return state.filters.length
+      return Object.values(state.filters).flatMap(item=>{
+        return (item[0] === 'range') ? item[0] : item
+      }).length
     },
     numberOfProducts (state) {
       return state.productIds.length
@@ -32,23 +35,37 @@ const store = createStore({
   },
   mutations: {
     addFilter (state, payload) {
-      console.log(payload.name,payload.value)
-      
-      state.filters = [...state.filters].filter(values => {
-        return ( payload.name === 'range' && values.name === 'range' && payload.value.split(',')[0] === values.value.split(',')[0]) ? false : true
-      })
-      state.filters.push({'name':payload.name, 'value':payload.value})
+      if ( Array.isArray(payload.value) ) {
+        state.filters[payload.name] = payload.value
+      }
+      else if ( !state.filters[payload.name] ) {
+       state.filters[payload.name] = [payload.value]
+      }
+      else {
+        /*
+        state.filters[payload.value] = Object.values(state.filters['range']).filter(filter=> {
+
+          return (!filter.includes(payload.value[0]))
+        });
+        */
+        state.filters[payload.name].push(payload.value)
+      }
+
+      // state.filters.push({'name':payload.name, 'value':payload.value})
 
     },
     removeFilter (state, payload) {
 
-      state.filters = [...state.filters].filter(values => {
-        return (values.name === payload.name && values.value === payload.value) ? false : true
-      })
+      const index = state.filters[payload.name].indexOf(payload.value)
+      if (index > -1) {
+        state.filters[payload.name].splice(index, 1)
+      }
+      if ( state.filters[payload.name].length === 0) delete state.filters[payload.name]
+
 
     },
     clearFilter (state) {
-      state.filters = []
+      state.filters = {}
       state.productIds = []
     },
     updateCategories (state, payload) {
@@ -59,30 +76,44 @@ const store = createStore({
     }
   },
   actions: {
-    async updateCategories({commit}, payload={}) {
-
-      const categories = await axios.get('/api/categories?'+payload.query)
-                                          .then(response => response.data.data)
-      commit('updateCategories', categories)
-
-      // commit('updateFilter')  change this to a new route to get ids? Move category details into filter to be used
-    },
-    async updateProductIds({commit}, payload={}) {
+    async updateCategories({commit, state}) {
 
       let query = []
 
-      payload.forEach(filter=>{
-        if ( !query[filter.name] ) {
-          query[filter.name] = filter.name + '=' + filter.value.replace('#','')
-        } else {
-          query[filter.name] += ',' + filter.value.replace('#','')
-        }
-        //return filter.name + '=' + filter.value.replace('#','')
+      Object.entries(state.filters).forEach(([name, values]) => { // GET RID OF Object.entries
+          const category = state.categories[state.categories.findIndex(f => f.name === name)]
+
+          if ( values[0] === 'range') {
+            query.push(name + '=' + encodeURIComponent( values.join(',') ) )
+          }
       })
-//console.log('query',Object.values(query).join('&'))
-      const productIds = await axios.get('/api/categories/id?'+Object.values(query).join('&'))
+      console.log('updateCategories',query)
+      const categories = await axios.get('/api/categories?'+query.join('&'))
                                           .then(response => response.data.data)
-                                          //console.log(productIds)
+      commit('updateCategories', categories)
+
+    },
+    async updateProductIds({commit, state}) {
+
+      let query = []
+
+
+      Object.entries(state.filters).forEach(([name, values]) => { // GET RID OF Object.entries
+          const category = state.categories[state.categories.findIndex(f => f.name === name)]
+
+          if ( values[0] === 'range') {
+            query.unshift(name + '=' + encodeURIComponent( values.join(',') ) )
+          } else {
+
+              query.push(name + '=' + encodeURIComponent( intersection(Object.keys(category.values), values).join(',') ) )
+          }
+
+
+      })
+console.log('updateProductIds',Object.values(query).join('&'))
+      const productIds = await axios.get('/api/categories/id?'+query.join('&'))
+                                          .then(response => response.data.data)
+
       commit('updateProductIds', productIds)
 
       // commit('updateFilter')  change this to a new route to get ids? Move category details into filter to be used
@@ -109,5 +140,7 @@ createInertiaApp({
 InertiaProgress.init({ color: '#4B5563' });
 
 // Add error catch in axios callbacks
-// problem that active filters remain when category redraws (change object from 0:{name,value} to name:{value} ALSO change prop from [] to {})
-// can updatecategories use the same values as addgilter?
+
+// loading section as component
+// change filter back to array not Object
+// validate in categorycontroller

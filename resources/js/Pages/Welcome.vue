@@ -17,7 +17,7 @@
       <header>
         <h2>Mens Trail Running Shoes</h2>
 
-        <div v-if="products[0]" class="sort-group" >
+        <div class="sort-group" >
 
           <p-sort v-for="sortable in sortables" :key="sortable.column" :sortable="sortable" @triggered="sortProducts">
             {{ sortable.name }}
@@ -30,12 +30,14 @@
         </section>
       </template>
       <template v-else>
-        <section v-for="n in 10" :key="'blank_'+n">
+        <section v-for="n in $store.getters.numberOfProducts" :key="'blank_'+n">
           <div class="product-wrapper">
-            <img src="https://via.placeholder.com/200"/>
-            <h2></h2>
-            <h4></h4>
-            <p></p>
+            <svg width="100%" height="100%" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+              <rect width="400" height="400" rx="10" ry="10"/>
+            </svg>
+            <h2>&nbsp;</h2>
+            <h4>&nbsp;</h4>
+            <p>&nbsp;</p>
           </div>
         </section>
       </template>
@@ -118,64 +120,7 @@ export default {
   			return 0
   		})
 
-    },
-    filterProducts(ids, del = false, query = false) {
-
-      if ( query ) {    // query needs to be additive for multiple range components
-        /*
-        this.filter.forEach((filteredIDs, index, theArray) => {
-          theArray[index] = intersection(filteredIDs.flatMap(id => id), ids.flatMap(id => id))
-        });
-        (filteredIDs => {
-          intersection(filteredIDs, ids)
-        })
-        console.log(this.filter)
-        */
-        //this.filter = ids
-        this.loadCategories(query)
-        this.loadProducts()
-
-        //this.filter = ['c']
-
-        return
-      }
-
-      if ( del == true) {
-
-        // this.filter = difference(this.filter, ids)
-
-
-        this.filter = this.filter.filter(id => {
-
-          return !isEqual(id, ids)
-        })
-
-        this.loadProducts()
-
-        return
-      } else if ( ids.length === 0 ) {
-        this.filter = []
-
-        this.$store.dispatch('updateCategories')
-        this.loadProducts()
-        return
-      }
-
-      this.filter.push(ids)   // this should be an axios call to get new ids
-      this.$store.commit('addFilter', {'filter':'first', 'ids':[1,2,3]})
-      this.loadProducts()
-      /*
-      this.filter =  this.filter.length === 0 ?
-                            this.filter = ids :
-                            intersection(ids.flatMap(id => id), this.filter.flatMap(id => id))
-                            */
-      /*
-      this.categories.filter(p => {
-        return this.filter.flatMap(id => id).some(id => id === p['id'])
-      })
-      */
-    },
-
+    }
   },
   watch: {
     '$store.getters.productIds': function() {
@@ -235,13 +180,28 @@ export default {
     justify-content: flex-end;
     width:100%;
   }
-  .product-wrapper img {
-    width:100%;
-    object-fit: cover;
-  }
+
   h2, h4, p {
     font-weight:normal;
     margin:0;
 
+  }
+  .product-wrapper svg {
+    width:100%;
+    object-fit: cover;
+    fill:rgb(204, 204, 204, 0.5);
+  }
+  .product-wrapper h2, .product-wrapper h4, .product-wrapper p {
+    width:76%;
+    background: rgb(204, 204, 204, 0.5);
+    border-radius: 5px;
+    font-size: 80%;
+    margin: .25rem 0;
+  }
+  .product-wrapper h4 {
+    width:24%;
+  }
+  .product-wrapper p {
+    width:51%;
   }
 </style>

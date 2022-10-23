@@ -3,12 +3,11 @@
     <input class="toggle" type="checkbox" :id="id"/>
     <label :for="id">{{ label }}</label><!-- add fa icon-->
         <ul v-if="!isNumber" class="sub_category">
-
-          <li :class="{active: active[value] }" v-for="(value, index) in Object.keys(values)" :key="value" @click="triggered(label, value)">
-            <template v-if="isHex"><span class="colour_dot" :style="{ 'background-color': `${value}`}"></span>({{ Object.values(values)[index].length }})</template>
-            <template v-else>{{ value }} ({{ Object.values(values)[index].length }})</template>
-            <font-awesome-icon v-if="!active[value]" class="circle" icon="fa-regular fa-circle" />
-            <font-awesome-icon v-if="active[value]" class="check" icon="fa-regular fa-circle-check" />
+          <li :class="{active: active[name] }" v-for="(ids, name) in values" :key="name" @click="triggered(label, name)">
+            <template v-if="isHex"><span class="colour_dot" :style="{ 'background-color': `${name}`}"></span>({{ ids.length }})</template>
+            <template v-else>{{ name }} ({{ ids.length }})</template>
+            <font-awesome-icon v-if="!active[name]" class="circle" icon="fa-regular fa-circle" />
+            <font-awesome-icon v-if="active[name]" class="check" icon="fa-regular fa-circle-check" />
 
           </li>
         </ul>
@@ -46,21 +45,21 @@ export default {
     pRange
   },
   methods: {
-    triggered(name, value) {
-      if ( !this.active[value] ) {
+    triggered(label, name) {
+      if ( !this.active[name] ) {
 
-        this.active[value] = true
+        this.active[name] = true
 
-        //this.$emit('triggered', this.ids) //:
-        this.$store.commit('addFilter', {'name':name, 'value':value})
-        this.$store.dispatch('updateProductIds', this.$store.state.filters)
-        // this.$emit('triggered', ids, false, '?range=price,'+this.range[0]+','+this.range[1])
+
+        this.$store.commit('addFilter', {'name':label, 'value':name})
+        this.$store.dispatch('updateProductIds')
+
      }
      else {
-       this.active[value] = false
-       //this.$emit('triggered', this.ids, true) // delete ids
-       this.$store.commit('removeFilter', {'name':name, 'value':value})
-       this.$store.dispatch('updateProductIds', this.$store.state.filters)
+       this.active[name] = false
+
+       this.$store.commit('removeFilter', {'name':label, 'value':name})
+       this.$store.dispatch('updateProductIds')
      }
 
    },

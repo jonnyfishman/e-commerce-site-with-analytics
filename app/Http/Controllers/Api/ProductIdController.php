@@ -27,7 +27,6 @@ class ProductIdController extends Controller
   public function index(Request $request) { // rename some attributers i.e. colour to get column value
 
     $categories = ['colour','brand','fit','rise','terrain','price']; // push this to factory
-    $sql = [];
 
     $validated = $request->validate([
       'range' => [new Range($categories)],
@@ -38,44 +37,41 @@ class ProductIdController extends Controller
       'terrain' => 'regex:/^[a-zA-Z0-9,]*$/'
     ]);
 
+    $and = [];
+    $or = [];
 
-
-    foreach ($request->all() as $category => $value) {
-        if ( $category === 'range') {
-          $range = explode(',',$value );
-
-          if ( count( $range ) > 1 ) {
-            for ($i=0; $i < count($range); $i+=3) {
-              [$name,$min,$max] = [$range[$i],$range[$i+1],$range[$i+2]];
-
-                array_push($sql, [$name, '>', $min], [$name, '<=', $max]);
-
-            }
-          }
-        }
-        else if ( !in_array($category, $categories) ) {
+    foreach ($request->all() as $category => $value) {    // HELPER FUNCTION?
+        if ( !in_array($category, $categories) ) {
 
             //abort( response('Unauthorized', 401) );
             abort( 401 );
-        } else if ($category !== 'range') {
+        } else {
           $values = explode(',',$value );
-            foreach ($values as $value) {
-              array_push($sql, [$category, 'like', '%'.$value.'%']);
+            if ( in_array('range',$values) ) {
 
+                [$min,$max] = [$values[1],$values[2]];
+                array_push($and, [$category, '>', $min], [$category, '<=', $max]);
+
+
+            } else {
+              foreach ($values as $value) {
+                array_push($or, [$category, 'like', '%'.$value.'%']);
+
+              }
             }
+
 
         }
 
     }
 
-    $products = Product::where(function($query) use ($sql) {
-        $query->where(array_splice($sql,0,1));
-        foreach($sql as $q) {
-          if ( $q[1] === '>' || $q[1] === '<=') {
-              $query->Where([$q]);
-          } else {
-            $query->orWhere([$q]);
-          }
+    $products = Product::where(function($query) use ($and) {
+        foreach($and as $sql) {
+              $query->Where([$sql]);
+        }
+    })->where(function($query) use ($or) {
+        foreach($or as $sql) {
+            $query->orWhere([$sql]);
         }
     })->join('product_information', 'products.id', '=', 'product_id')->pluck('products.id');
 

@@ -52,11 +52,11 @@ export default {
   },
   methods: {
 
-   getTriggered() {
+   async getTriggered() {
 
-     this.$store.commit('addFilter', {'name':'range', 'value':this.name+','+this.range[0]+','+this.range[1]})
-     this.$store.dispatch('updateCategories',{'name':this.name, 'query':'range=price,'+this.range[0]+','+this.range[1]})
-     this.$store.dispatch('updateProductIds', this.$store.state.filters)
+     await this.$store.commit('addFilter', {'name':this.name, 'value':['range',this.range[0],this.range[1]]})
+     await this.$store.dispatch('updateCategories')
+     await this.$store.dispatch('updateProductIds')
      //this.$emit('triggered', this.ids.flatMap(id=>id), false, 'range=price,'+this.range[0]+','+this.range[1])
    },
    reset() {
